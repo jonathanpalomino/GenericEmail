@@ -80,13 +80,13 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_dynamic_email, container, false);
-
-        recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
         mAdaptador = new MessageAdapter(getContext(), mensajes, this);
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
+
+        recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.addItemDecoration(new DividerItemDecoration(rootView.getContext(), LinearLayoutManager.VERTICAL));
@@ -140,10 +140,6 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
         if(!primeravez){
             mensajes = mListener.onRefrescarMensajes(folderActual);
             mAdaptador = new MessageAdapter(getContext(), mensajes, this);
-            RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
-            recyclerView.setLayoutManager(mLayoutManager);
-            recyclerView.setItemAnimator(new DefaultItemAnimator());
-            recyclerView.addItemDecoration(new DividerItemDecoration(getContext(), LinearLayoutManager.VERTICAL));
             recyclerView.setAdapter(mAdaptador);
         }
         mAdaptador.notifyDataSetChanged();
@@ -152,13 +148,13 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
 
     @Override
     public void onIconClicked(int position) {
-        Toast.makeText(getContext(),"onIconClicked" ,Toast.LENGTH_SHORT).show();
+       // Toast.makeText(getContext(),"onIconClicked" ,Toast.LENGTH_SHORT).show();
         toggleSelection(position);
     }
 
     @Override
     public void onIconImportantClicked(int position) {
-        Toast.makeText(getContext(),"onIconImportantClicked" ,Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getContext(),"onIconImportantClicked" ,Toast.LENGTH_SHORT).show();
         // Star icon is clicked,
         // mark the message as important
         EmailMessage message = mensajes.get(position);
@@ -169,7 +165,7 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
 
     @Override
     public void onMessageRowClicked(int position) {
-        Toast.makeText(getContext(),"onMessageRowClicked" ,Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getContext(),"onMessageRowClicked" ,Toast.LENGTH_SHORT).show();
         // verify whether action mode is enabled or not
         // if enabled, change the row state to activated
         if (mAdaptador.getSelectedItemCount() > 0) {
@@ -181,13 +177,13 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
             mensajes.set(position, message);
             mAdaptador.notifyDataSetChanged();
 
-            Toast.makeText(getContext(), "Read: " + message.getMessage(), Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getContext(), "Read: " + message.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onRowLongClicked(int position) {
-        Toast.makeText(getContext(),"onRowLongClicked" ,Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getContext(),"onRowLongClicked" ,Toast.LENGTH_SHORT).show();
         // long press is performed, enable action mode
         toggleSelection(position);
     }
@@ -213,10 +209,38 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
         mAdaptador.toggleSelection(position);
         int count = mAdaptador.getSelectedItemCount();
         if (count == 0) {
+            mAdaptador.clearSelections();
+            swipeRefreshLayout.setEnabled(true);
+            recyclerView.post(new Runnable() {
+                @Override
+                public void run() {
+                    mAdaptador.resetAnimationIndex();
+                }
+            });
             mListener.onFinalizarBarra();
         } else {
             mListener.onActionItemClicked(position,count);
         }
+    }
+    public void deleteMessages() {
+        mAdaptador.resetAnimationIndex();
+        List<Integer> selectedItemPositions =mAdaptador.getSelectedItems();
+        for (int i = selectedItemPositions.size() - 1; i >= 0; i--) {
+            mAdaptador.removeData(selectedItemPositions.get(i));
+        }
+        mAdaptador.notifyDataSetChanged();
+        mAdaptador.clearSelections();
+    }
+    public void readMessages(boolean marcaLeido){
+        mAdaptador.resetAnimationIndex();
+        List<Integer> selectedItemPositions =mAdaptador.getSelectedItems();
+        for(int i=0;i<selectedItemPositions.size();i++){
+            int posicionActual =selectedItemPositions.get(i);
+            EmailMessage message = mensajes.get(posicionActual);
+            message.setRead(marcaLeido);
+            mensajes.set(posicionActual, message);
+        }
+        mAdaptador.notifyDataSetChanged();
     }
     private class ActionModeCallback implements ActionMode.Callback {
         @Override

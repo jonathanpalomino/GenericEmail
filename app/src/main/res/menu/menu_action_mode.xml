@@ -14,4 +14,10 @@
         android:orderInCategory="100"
         android:title="@string/action_open"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_close"
+        android:icon="@drawable/ic_close_mail"
+        android:orderInCategory="100"
+        android:title="@string/action_close"
+        app:showAsAction="always" />
 </menu>

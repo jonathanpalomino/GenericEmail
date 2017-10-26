@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
@@ -18,16 +19,20 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.palomino.genericemail.email.EmailMessage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class MailFoldersActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,DynamicEmailFragment.OnFragmentInteractionListener {
 
     String folderActual;
     private ArrayList<EmailMessage> mensajes;
+    String cantidadEmails="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +79,15 @@ public class MailFoldersActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.mail_folders, menu);
+        //Toast.makeText(this,"onCreateOptionsMenu",Toast.LENGTH_LONG).show();
+        if(cantidadEmails.equals("")){
+            getMenuInflater().inflate(R.menu.mail_folders, menu);
+            getSupportActionBar().setTitle("");
+        }
+        else{
+            getMenuInflater().inflate(R.menu.menu_action_mode, menu);
+            getSupportActionBar().setTitle("Total "+cantidadEmails);
+        }
         return true;
     }
 
@@ -89,8 +102,37 @@ public class MailFoldersActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         }
+        else if (id == R.id.action_delete){
+            BorrarMensajes();
+            Toast.makeText(this,"Borrar Emails",Toast.LENGTH_LONG).show();
+            return true;
+        }
+        else if (id == R.id.action_open){
+            Toast.makeText(this,"Abrir Emails",Toast.LENGTH_LONG).show();
+            AbrirMensajes();
+            return true;
+        }
+        else if (id == R.id.action_close){
+            Toast.makeText(this,"Cerrar Emails",Toast.LENGTH_LONG).show();
+            CerrarMensajes();
+            return true;
+        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void BorrarMensajes() {
+        supportInvalidateOptionsMenu();
+        DynamicEmailFragment articleFrag = (DynamicEmailFragment)getSupportFragmentManager().findFragmentById(R.id.flContent);
+        articleFrag.deleteMessages();
+    }
+    private void AbrirMensajes() {
+        DynamicEmailFragment articleFrag = (DynamicEmailFragment)getSupportFragmentManager().findFragmentById(R.id.flContent);
+        articleFrag.readMessages(true);
+    }
+    private void CerrarMensajes() {
+        DynamicEmailFragment articleFrag = (DynamicEmailFragment)getSupportFragmentManager().findFragmentById(R.id.flContent);
+        articleFrag.readMessages(false);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -203,17 +245,21 @@ public class MailFoldersActivity extends AppCompatActivity
 
     @Override
     public void onFragmentInteraction(Uri uri) {
-        Log.i("onFragmentInteraction","Invoca un Uri");
+        Toast.makeText(this,"onFragmentInteraction Invoca un Uri",Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onActionItemClicked(int posicionItem, int cantidadItems) {
-        Log.i("onActionItemClicked","MARCADA LA POSICION "+posicionItem+" de un total de "+cantidadItems);
+        cantidadEmails=cantidadItems+"";
+        supportInvalidateOptionsMenu();
+        //Toast.makeText(this,"onActionItemClicked MARCADA LA POSICION "+posicionItem+" de un total de "+cantidadItems,Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onFinalizarBarra() {
-        Log.i("onFinalizarBarra","Finaliza el evento actionbar");
+        cantidadEmails="";
+        supportInvalidateOptionsMenu();
+        //Toast.makeText(this,"onFinalizarBarra Finaliza el evento actionbar",Toast.LENGTH_LONG).show();
     }
 
     @Override
