@@ -35,11 +35,6 @@ import java.util.List;
  * create an instance of this fragment.
  */
 public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener,MessageAdapter.MessageAdapterListener {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -48,10 +43,8 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
 
     private String folderActual;
     MessageAdapter mAdaptador;
-    private List<EmailMessage> mensajes = new ArrayList<>();
-    private ActionMode actionMode;
+    private ArrayList<EmailMessage> mensajes = new ArrayList<>();
     private SwipeRefreshLayout swipeRefreshLayout;
-    private ActionModeCallback actionModeCallback;
     private RecyclerView recyclerView;
 
     public DynamicEmailFragment() {
@@ -70,8 +63,6 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
     public static DynamicEmailFragment newInstance(String param1, String param2) {
         DynamicEmailFragment fragment = new DynamicEmailFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
     }
@@ -80,8 +71,8 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            mensajes = (ArrayList<EmailMessage>) getArguments().getSerializable("LISTA_EMAILS");
+            folderActual = getArguments().getString("ID_ITEM");
         }
     }
 
@@ -101,13 +92,12 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
         recyclerView.addItemDecoration(new DividerItemDecoration(rootView.getContext(), LinearLayoutManager.VERTICAL));
         recyclerView.setAdapter(mAdaptador);
 
-        actionModeCallback = new ActionModeCallback();
         // show loader and fetch messages
         swipeRefreshLayout.post(
                 new Runnable() {
                     @Override
                     public void run() {
-                        reloadMessagesbyFolder(folderActual);
+                        reloadMessagesbyFolder(folderActual,true);
                     }
                 }
         );
@@ -142,75 +132,27 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
 
     @Override
     public void onRefresh() {
-        reloadMessagesbyFolder(folderActual);
+        reloadMessagesbyFolder(folderActual,false);
     }
 
-    private void reloadMessagesbyFolder(String folderActual) {
+    private void reloadMessagesbyFolder(String folderActual,boolean primeravez) {
         swipeRefreshLayout.setRefreshing(true);
-        mensajes.clear();
-
-        List<EmailMessage> men = new ArrayList<>();
-        EmailMessage tmp = new EmailMessage();
-        tmp.setFrom("prueba1@gmail.com");
-        tmp.setImportant(true);
-        tmp.setMessage("Mensaje1");
-        tmp.setRead(false);
-        tmp.setSubject("Asunto1");
-        men.add(tmp);
-
-        tmp = new EmailMessage();
-        tmp.setFrom("prueba2@gmail.com");
-        tmp.setImportant(true);
-        tmp.setMessage("Mensaje2");
-        tmp.setRead(false);
-        tmp.setSubject("Asunto2");
-        men.add(tmp);
-
-        tmp = new EmailMessage();
-        tmp.setFrom("prueba3@gmail.com");
-        tmp.setImportant(true);
-        tmp.setMessage("Mensaje3");
-        tmp.setRead(false);
-        tmp.setSubject("Asunto3");
-        men.add(tmp);
-
-        tmp = new EmailMessage();
-        tmp.setFrom("prueba4@gmail.com");
-        tmp.setImportant(true);
-        tmp.setMessage("Mensaje4");
-        tmp.setRead(false);
-        tmp.setSubject("Asunto4");
-        men.add(tmp);
-
-        for(EmailMessage a : men){
-            a.setColor(getRandomMaterialColor("400"));
-            mensajes.add(a);
+        if(!primeravez){
+            mensajes = mListener.onRefrescarMensajes(folderActual);
+            mAdaptador = new MessageAdapter(getContext(), mensajes, this);
+            RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
+            recyclerView.setLayoutManager(mLayoutManager);
+            recyclerView.setItemAnimator(new DefaultItemAnimator());
+            recyclerView.addItemDecoration(new DividerItemDecoration(getContext(), LinearLayoutManager.VERTICAL));
+            recyclerView.setAdapter(mAdaptador);
         }
         mAdaptador.notifyDataSetChanged();
         swipeRefreshLayout.setRefreshing(false);
-
     }
-    private int getRandomMaterialColor(String typeColor) {
-        int returnColor = Color.GRAY;
-        int arrayId = getResources().getIdentifier("mdcolor_" + typeColor, "array", getActivity().getPackageName());
-
-        if (arrayId != 0) {
-            TypedArray colors = getResources().obtainTypedArray(arrayId);
-            int index = (int) (Math.random() * colors.length());
-            returnColor = colors.getColor(index, Color.GRAY);
-            colors.recycle();
-        }
-        return returnColor;
-    }
-
 
     @Override
     public void onIconClicked(int position) {
         Toast.makeText(getContext(),"onIconClicked" ,Toast.LENGTH_SHORT).show();
-        if (actionMode == null) {
-           // actionMode = startSupportActionMode(actionModeCallback);
-        }
-
         toggleSelection(position);
     }
 
@@ -231,7 +173,7 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
         // verify whether action mode is enabled or not
         // if enabled, change the row state to activated
         if (mAdaptador.getSelectedItemCount() > 0) {
-            enableActionMode(position);
+            toggleSelection(position);
         } else {
             // read the message which removes bold from the row
             EmailMessage message = mensajes.get(position);
@@ -247,7 +189,7 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
     public void onRowLongClicked(int position) {
         Toast.makeText(getContext(),"onRowLongClicked" ,Toast.LENGTH_SHORT).show();
         // long press is performed, enable action mode
-        enableActionMode(position);
+        toggleSelection(position);
     }
 
     /**
@@ -261,31 +203,25 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+        void onActionItemClicked(int posicionItem,int cantidadItems);
+        void onFinalizarBarra();
+        ArrayList<EmailMessage> onRefrescarMensajes(String folderActual);
     }
+
     private void toggleSelection(int position) {
         mAdaptador.toggleSelection(position);
         int count = mAdaptador.getSelectedItemCount();
-
         if (count == 0) {
-            //actionMode.finish();
+            mListener.onFinalizarBarra();
         } else {
-            //actionMode.setTitle(String.valueOf(count));
-            //actionMode.invalidate();
+            mListener.onActionItemClicked(position,count);
         }
-    }
-    private void enableActionMode(int position) {
-        if (actionMode == null) {
-           // actionMode = startSupportActionMode(actionModeCallback);
-        }
-        toggleSelection(position);
     }
     private class ActionModeCallback implements ActionMode.Callback {
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
             mode.getMenuInflater().inflate(R.menu.menu_action_mode, menu);
-            // disable swipe refresh if action mode is enabled
             swipeRefreshLayout.setEnabled(false);
             return true;
         }
@@ -313,7 +249,6 @@ public class DynamicEmailFragment extends Fragment implements SwipeRefreshLayout
         public void onDestroyActionMode(ActionMode mode) {
             mAdaptador.clearSelections();
             swipeRefreshLayout.setEnabled(true);
-            actionMode = null;
             recyclerView.post(new Runnable() {
                 @Override
                 public void run() {

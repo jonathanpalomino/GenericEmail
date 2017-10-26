@@ -1,10 +1,12 @@
 package com.palomino.genericemail.email;
 
+import java.io.Serializable;
+
 /**
  * Created by Usuario on 25/10/2017.
  */
 
-public class EmailMessage {
+public class EmailMessage implements Serializable {
     private int id;
     private String from;
     private String subject;
@@ -89,4 +91,5 @@ public class EmailMessage {
     public void setColor(int color) {
         this.color = color;
     }
+
 }
