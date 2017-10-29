@@ -1,15 +1,16 @@
 package com.palomino.genericemail;
 
+import android.app.SearchManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -19,13 +20,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.SearchView;
 import android.widget.Toast;
-
 import com.palomino.genericemail.email.EmailMessage;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+
 
 public class MailFoldersActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,DynamicEmailFragment.OnFragmentInteractionListener {
@@ -79,10 +78,28 @@ public class MailFoldersActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        //Toast.makeText(this,"onCreateOptionsMenu",Toast.LENGTH_LONG).show();
         if(cantidadEmails.equals("")){
             getMenuInflater().inflate(R.menu.mail_folders, menu);
             getSupportActionBar().setTitle("");
+            // Associate searchable configuration with the SearchView
+            SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+            SearchView searchView =  (SearchView) menu.findItem(R.id.action_find).getActionView();
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+            searchView.setSubmitButtonEnabled(false);
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    Intent search = new Intent(MailFoldersActivity.this,SearchActivity.class);
+                    search.putExtra("SEARCH",query);
+                    startActivity(search);
+                    return true;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    return true;
+                }
+            });
         }
         else{
             getMenuInflater().inflate(R.menu.menu_action_mode, menu);
@@ -99,8 +116,8 @@ public class MailFoldersActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if (id == R.id.action_find) {
+           return true;
         }
         else if (id == R.id.action_delete){
             BorrarMensajes();
@@ -121,10 +138,15 @@ public class MailFoldersActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    private void BuscarMensajes() {
+
+    }
+
     private void BorrarMensajes() {
-        supportInvalidateOptionsMenu();
         DynamicEmailFragment articleFrag = (DynamicEmailFragment)getSupportFragmentManager().findFragmentById(R.id.flContent);
         articleFrag.deleteMessages();
+        cantidadEmails="";
+        supportInvalidateOptionsMenu();
     }
     private void AbrirMensajes() {
         DynamicEmailFragment articleFrag = (DynamicEmailFragment)getSupportFragmentManager().findFragmentById(R.id.flContent);
@@ -252,14 +274,12 @@ public class MailFoldersActivity extends AppCompatActivity
     public void onActionItemClicked(int posicionItem, int cantidadItems) {
         cantidadEmails=cantidadItems+"";
         supportInvalidateOptionsMenu();
-        //Toast.makeText(this,"onActionItemClicked MARCADA LA POSICION "+posicionItem+" de un total de "+cantidadItems,Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onFinalizarBarra() {
         cantidadEmails="";
         supportInvalidateOptionsMenu();
-        //Toast.makeText(this,"onFinalizarBarra Finaliza el evento actionbar",Toast.LENGTH_LONG).show();
     }
 
     @Override

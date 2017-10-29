@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.palomino.hitssemail", appContext.getPackageName());
+        assertEquals("com.palomino.genericemail", appContext.getPackageName());
     }
 }

@@ -8,7 +8,7 @@
     <string name="action_delete">Delete Message</string>
     <string name="action_open">Open Message</string>
     <string name="action_close">Close Message</string>
+    <string name="action_find">Find Message</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="search_hint">Find Message</string>
 </resources>
